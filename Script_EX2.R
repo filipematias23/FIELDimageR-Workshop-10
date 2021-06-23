@@ -35,7 +35,7 @@ Map1<-fieldMap(fieldPlot = Data1$Plot,fieldColumn = Data1$Column, fieldRow = Dat
 Map1
 
 # Building the plot shapefile (ncols = 14 and nrows = 10)
-x11()
+#x11()
 EX2.Shape.1<-fieldShape(mosaic = EX2.Crop.1, ncols = 14, nrows = 10, fieldData = Data1, ID = "Plot", fieldMap = Map1)
 
 # Trial: 02
@@ -84,6 +84,8 @@ fieldPlot(fieldShape=EX2.Info$fieldShape,
           alpha = 0.4,
           round = 2)
 
+rm(list=setdiff(ls(), c("EX2.Shape","EX2.Info","EX2.RemSoil","EX2.Indices")))
+
 # Uploading files from vegetative growth (dsm_1.tif):
 DSM <- stack("dsm.tif")
 plot(DSM)
@@ -94,40 +96,46 @@ DSM.R<-fieldRotate(DSM, theta = 2.3)
 # Removing the soil using mask from step 4:
 DSM.S <- fieldMask(DSM.R, mask = EX2.RemSoil$mask)
 
+rm(list=setdiff(ls(), c("EX2.Shape","EX2.Info","EX2.RemSoil","EX2.Indices","DSM.R","DSM.S")))
+
 # Extracting the estimate plant height average (EPH):
 EPH <- fieldInfo(DSM.S$newMosaic, fieldShape = EX2.Info$fieldShape, fun = "mean",n.core = 3)
 EPH$plotValue
-#EPH<-read.csv("EPH.csv",header = T) # In case of ERROR 
 
 # Correlation
-NewData2<-EPH$fieldShape@data[,c("dsm","NGRDI","BGI","myIndex")]
-#NewData2<-EPH[,c("dsm","NGRDI","BGI","myIndex")]
+NewData2<-EPH$fieldShape@data[,c("layer","NGRDI","BGI","myIndex")]
 cor1<-correlation(NewData2)
 cor1$correlation
 cor1$pvalue
 
 # Regression
-NewData3<-EPH$fieldShape@data[,c("Trial","Name","Block","Row","Column","dsm","NGRDI")]
-#NewData3<-EPH[,c("Trial","Name","Block","Row","Column","dsm","NGRDI")]
+NewData3<-EPH$fieldShape@data[,c("Trial","Name","Block","Row","Column","layer","NGRDI")]
 NewData3$Trial<-as.factor(NewData3$Trial)
 NewData3$Name<-as.factor(NewData3$Name)
 NewData3$Block<-as.factor(NewData3$Block)
 NewData3$Row<-as.factor(NewData3$Row)
 NewData3$Column<-as.factor(NewData3$Column)
-NewData3$dsm<-as.numeric(as.character(NewData3$dsm))
+NewData3$layer<-as.numeric(as.character(NewData3$layer))
 NewData3$NGRDI<-as.numeric(as.character(NewData3$NGRDI))
 
-ggplot(NewData3,aes(x=dsm,y=NGRDI, col=Trial))+
+ggplot(NewData3,aes(x=layer,y=NGRDI, col=Trial))+
   facet_wrap(~Trial, scales = "fixed",ncol = 1)+
   geom_point() +
   geom_smooth(method=lm)+
   theme_bw()
 
 fieldPlot(fieldShape=EPH$fieldShape,
-          fieldAttribute="dsm", 
+          fieldAttribute="layer", 
           mosaic=EX2.Indices, 
           color=c("red","blue"), 
           alpha = 0.4,
+          round = 2)
+
+fieldPlot(fieldShape=EPH$fieldShape,
+          fieldAttribute="layer", 
+          mosaic=DSM.R, 
+          color=c("red","blue"), 
+          alpha = 0.8,
           round = 2)
 
 # Heritability - NGRDI
@@ -156,16 +164,16 @@ ggplot(NewData4,aes(x=Trail,y=H2,fill=Trail))+
 
 # Heritability - Estimated plant height 
 
-mod.T1<-lmer(dsm~Row+Column+(1|Name),NewData3[NewData3$Trial=="T1",])
+mod.T1<-lmer(layer~Row+Column+(1|Name),NewData3[NewData3$Trial=="T1",])
 H2.T1<-as.data.frame(VarCorr(mod.T1))$vcov[1]/sum(as.data.frame(VarCorr(mod.T1))$vcov)
 
-mod.T2<-lmer(dsm~Row+Column+(1|Name),NewData3[NewData3$Trial=="T2",])
+mod.T2<-lmer(layer~Row+Column+(1|Name),NewData3[NewData3$Trial=="T2",])
 H2.T2<-as.data.frame(VarCorr(mod.T2))$vcov[1]/sum(as.data.frame(VarCorr(mod.T2))$vcov)
 
-mod.T3<-lmer(dsm~Row+Column+(1|Name),NewData3[NewData3$Trial=="T3",])
+mod.T3<-lmer(layer~Row+Column+(1|Name),NewData3[NewData3$Trial=="T3",])
 H2.T3<-as.data.frame(VarCorr(mod.T3))$vcov[1]/sum(as.data.frame(VarCorr(mod.T3))$vcov)
 
-mod.T4<-lmer(dsm~Row+Column+(1|Name),NewData3[NewData3$Trial=="T4",])
+mod.T4<-lmer(layer~Row+Column+(1|Name),NewData3[NewData3$Trial=="T4",])
 H2.T4<-as.data.frame(VarCorr(mod.T4))$vcov[1]/sum(as.data.frame(VarCorr(mod.T4))$vcov)
 
 NewData4<-data.frame(Trail=factor(c("T1","T2","T3","T4")),
