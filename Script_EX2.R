@@ -97,15 +97,18 @@ DSM.S <- fieldMask(DSM.R, mask = EX2.RemSoil$mask)
 # Extracting the estimate plant height average (EPH):
 EPH <- fieldInfo(DSM.S$newMosaic, fieldShape = EX2.Info$fieldShape, fun = "mean",n.core = 3)
 EPH$plotValue
+#EPH<-read.csv("EPH.csv",header = T) # In case of ERROR 
 
 # Correlation
 NewData2<-EPH$fieldShape@data[,c("dsm","NGRDI","BGI","myIndex")]
+#NewData2<-EPH[,c("dsm","NGRDI","BGI","myIndex")]
 cor1<-correlation(NewData2)
 cor1$correlation
 cor1$pvalue
 
 # Regression
 NewData3<-EPH$fieldShape@data[,c("Trial","Name","Block","Row","Column","dsm","NGRDI")]
+#NewData3<-EPH[,c("Trial","Name","Block","Row","Column","dsm","NGRDI")]
 NewData3$Trial<-as.factor(NewData3$Trial)
 NewData3$Name<-as.factor(NewData3$Name)
 NewData3$Block<-as.factor(NewData3$Block)
